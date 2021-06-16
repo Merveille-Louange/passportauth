@@ -1,11 +1,15 @@
 const express = require('express');
 const app = new express();
 const  passport  =  require('passport');
+app.use(passport.initialize());
+app.use(passport.session());
 const  LocalStrategy  =  require('passport-local').Strategy;
+var cors = require('cors')
+app.use(cors());
 
 const auth = () => {
     return (req, res, next) => {
-        passport.authenticate('google', (error, user, info) => {
+        passport.authenticate('local', (error, user, info) => {
             if(error) res.status(400).json({"statusCode" : 200 ,"message" : error});
             req.login(user, function(error) {
                 if (error) return next(error);
@@ -38,8 +42,7 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(id, done) {
     done(null, id);
 });
-app.use(passport.initialize());
-app.use(passport.session());
+
 const isLoggedIn = (req, res, next) => {
     if(req.isAuthenticated()){
         return next()
