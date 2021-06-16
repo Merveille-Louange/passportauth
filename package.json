@@ -1,0 +1,23 @@
+{
+  "name": "com.dimou.auth",
+  "version": "1.0.0",
+  "description": "node authentication with passport.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "auth",
+    "auth0",
+    "passport",
+    "login"
+  ],
+  "author": "lodimou787@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0"
+  }
+}
