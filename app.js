@@ -19,8 +19,9 @@ const auth = () => {
     }
 }
 
-app.post('/authenticate', auth() , (req, res) => {
-    res.status(200).json({"statusCode" : 200 ,"message" : "hello"});
+app.get('/authenticate', auth() , (req, res) => {
+    res.status(200).json({"statusCode" : 200 ,"message" : "Hello " + req.user });
+    console.log(req);
 });
 
 app.listen(3000, () => {
