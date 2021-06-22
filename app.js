@@ -1,55 +1,105 @@
-const express = require('express');
-const app = new express();
-const  passport  =  require('passport');
+const express = require("express");
+const cors = require('cors');
+
+const path = require("path");
+
+const expressSession = require("express-session");
+const passport = require("passport");
+const Auth0Strategy = require("passport-auth0");
+
+require("dotenv").config();
+const authRouter = require("./auth");
+
+// index.js
+
+/**
+ * App Variables
+ */
+
+ const app = express();
+ app.use(cors())
+ 
+ const port = process.env.PORT || "8000";
+ 
+ /**
+  * Session Configuration (New!)
+  */
+  app.listen(port, () => {
+    console.log(`app listening at http://localhost:${port}`)
+  })
+
+  const session = {
+    secret: process.env.SESSION_SECRET,
+    cookie: {},
+    resave: false,
+    saveUninitialized: false
+  };
+  
+  if (app.get("env") === "production") {
+    // Serve secure cookies, requires HTTPS
+    session.cookie.secure = true;
+  }
+
+  /**
+ * Passport Configuration (New!)
+ */
+const strategy = new Auth0Strategy(
+    {
+      domain: process.env.AUTH0_DOMAIN,
+      clientID: process.env.AUTH0_CLIENT_ID,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET,
+      callbackURL: process.env.AUTH0_CALLBACK_URL
+    },
+    function(accessToken, refreshToken, extraParams, profile, done) {
+      /**
+       * Access tokens are used to authorize users to an API
+       * (resource server)
+       * accessToken is the token to call the Auth0 API
+       * or a secured third-party API
+       * extraParams.id_token has the JSON Web Token
+       * profile has all the information from the user
+       */
+      return done(null, profile);
+    }
+  );
+
+   /**
+ *  App Configuration
+ */
+    app.set("views", path.join(__dirname, "views"));
+    app.set("view engine", "pug");
+    app.use(express.static(path.join(__dirname, "public")));
+    
+    app.use(expressSession(session));
+// Rest of code...
+
+passport.use(strategy);
 app.use(passport.initialize());
 app.use(passport.session());
-const  LocalStrategy  =  require('passport-local').Strategy;
-var cors = require('cors')
-app.use(cors());
 
-const auth = () => {
-    return (req, res, next) => {
-        passport.authenticate('local', (error, user, info) => {
-            if(error) res.status(400).json({"statusCode" : 200 ,"message" : error});
-            req.login(user, function(error) {
-                if (error) return next(error);
-                next();
-            });
-        })(req, res, next);
-    }
-}
-
-app.get('/authenticate', auth() , (req, res) => {
-    res.status(200).json({"statusCode" : 200 ,"message" : "Hello " + req.user });
-    console.log(req);
+passport.serializeUser((user, done) => {
+  done(null, user);
 });
 
-app.listen(3000, () => {
-    console.log('App running at 3000')
-})
-passport.use(new LocalStrategy(
-    function(username, password, done) {
-        if(username === "admin" && password === "admin"){
-            return done(null, username);
-        } else {
-            return done("unauthorized access", false);
-        }
-    }
-));
-passport.serializeUser(function(user, done) {
-    if(user) done(null, user);
+passport.deserializeUser((user, done) => {
+  done(null, user);
 });
+
+
+// Creating custom middleware with Express
+app.use((req, res, next) => {
+    res.locals.isAuthenticated = req.isAuthenticated();
+    next();
+  });
+
   
-passport.deserializeUser(function(id, done) {
-    done(null, id);
-});
+// Router mounting
+app.get('/', function(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE'); // If needed
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type'); // If needed
+    res.setHeader('Access-Control-Allow-Credentials', true); // If needed
 
-const isLoggedIn = (req, res, next) => {
-    if(req.isAuthenticated()){
-        return next()
-    }
-    return res.status(400).json({"statusCode" : 400, "message" : "not authenticated"})
-}
-app.get('/getData', isLoggedIn, (req, res) => {
-    res.json("data")
-})
+    res.send('cors problem fixed:)');
+});
+app.use("/", authRouter);
